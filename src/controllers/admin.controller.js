@@ -205,7 +205,7 @@ const getCityWma = async (req, res) => {
         //start a transaction
         await connection.beginTransaction();
 
-        const getCityQuery = `SELECT * FROM city WHERE state_id 
+        const getCityQuery = `SELECT * FROM city WHERE state_id  = ?
         AND status = 1 ORDER BY city`;
 
         const getCityResult = await connection.query(getCityQuery, [ state_id ]);
@@ -325,6 +325,9 @@ const getGenderWma = async (req, res) => {
     }
 
 }
+
+//pdf uploaded
+
 
 
 module.exports = {
