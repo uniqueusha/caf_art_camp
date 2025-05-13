@@ -198,10 +198,11 @@ const addStudent = async (req, res) => {
                 // Save relative path to DB (for example: uploads/pdfs/student_1234567890.pdf)
                 const dbFilePath = `uploads/pdfs/${fileName}`;
 
+                if (student_id >=5){
                 let insertStusentPDFQuery = 'INSERT INTO student_pdf (student_id, pdf_location) VALUES (?, ?)';
                 let insertStusentPDFvalues = [student_id, dbFilePath];
                 await connection.query(insertStusentPDFQuery, insertStusentPDFvalues);
-
+                }
             } catch (err) {
                 await connection.query("ROLLBACK");
                 return error500("Error processing PDF: " + err.message, res);
@@ -222,6 +223,133 @@ const addStudent = async (req, res) => {
     }
 }
 
+// get student list...
+const getStudents = async (req, res) => {
+    const { page, perPage, key, city_id, state_id, gender_id, bloodgroup_id, course_id } = req.query;
+
+    // attempt to obtain a database connection
+    let connection = await getConnection();
+
+    try {
+
+        //start a transaction
+        await connection.beginTransaction();
+
+        let getStudentsQuery = `SELECT s.*, c.city,st.state, g.gender, b.bloodgroup, cr.course FROM student s
+        LEFT JOIN city c
+        ON s.city_id = c.city_id
+        LEFT JOIN state st
+        ON s.state_id = st.state_id
+        LEFT JOIN gender g
+        ON s.gender_id = g.gender_id
+        LEFT JOIN bloodgroup b
+        ON s.bloodgroup_id = b.bloodgroup_id
+        LEFT JOIN course cr
+        ON s.course_id = cr.course_id
+        WHERE 1`;
+
+        let countQuery = `SELECT COUNT(*) AS total FROM student s
+        WHERE 1`;
+
+        if (key) {
+            const lowercaseKey = key.toLowerCase().trim();
+            if (lowercaseKey === "activated") {
+                getStudentsQuery += ` AND status = 1`;
+                countQuery += ` AND status = 1`;
+            } else if (lowercaseKey === "deactivated") {
+                getStudentsQuery += ` AND status = 0`;
+                countQuery += ` AND status = 0`;
+            } else {
+                getStudentsQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.college_phone) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.hod_name) LIKE '%${lowercaseKey}%' || LOWER(s.phone_number) LIKE '%${lowercaseKey}%')`;
+                countQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.college_phone) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.hod_name) LIKE '%${lowercaseKey}%' || LOWER(s.phone_number) LIKE '%${lowercaseKey}%')`;
+            }
+        }
+
+        if (city_id) {
+            getStudentsQuery += ` AND c.city_id = ${city_id}`;
+            countQuery += `  AND c.city_id = ${city_id}`;
+        }
+
+        if (state_id) {
+            getStudentsQuery += ` AND s.state_id = ${state_id}`;
+            countQuery += `  AND s.state_id = ${state_id}`;
+        }
+
+        if (gender_id) {
+            getStudentsQuery += ` AND s.gender_id = ${gender_id}`;
+            countQuery += `  AND s.gender_id = ${gender_id}`;
+        }
+
+        if (bloodgroup_id) {
+            getStudentsQuery += ` AND s.bloodgroup_id = ${bloodgroup_id}`;
+            countQuery += `  AND s.bloodgroup_id = ${bloodgroup_id}`;
+        }
+
+        if (course_id) {
+            getStudentsQuery += ` AND s.course_id = ${course_id}`;
+            countQuery += `  AND s.course_id = ${course_id}`;
+        }
+
+        getStudentsQuery += " ORDER BY s.cts DESC";
+
+        // Apply pagination if both page and perPage are provided
+        let total = 0;
+        if (page && perPage) {
+            const totalResult = await connection.query(countQuery);
+            total = parseInt(totalResult[0][0].total);
+            const start = (page - 1) * perPage;
+            getStudentsQuery += ` LIMIT ${perPage} OFFSET ${start}`;
+        }
+
+        const result = await connection.query(getStudentsQuery);
+        const students = result[0];
+
+
+
+        //get footer
+        for (let i = 0; i < students.length; i++) {
+            const studentId = students[i].student_id;
+
+            let studentLanguageQuery = `SELECT sl.* FROM student_language sl
+            WHERE sl.student_id = ${studentId}`;
+            studentLanguageResult = await connection.query(studentLanguageQuery);
+            students[i]['studentLanguage'] = studentLanguageResult[0];
+        
+
+       
+            let studentPdfQuery = `SELECT sp.* FROM student_pdf sp
+            WHERE sp.student_id = ${studentId}`;
+            studentPdfResult = await connection.query(studentPdfQuery);
+            students[i]['studentPdf'] = studentPdfResult[0];
+        }
+
+        // Commit the transaction
+        await connection.commit();
+        const data = {
+            status: 200,
+            message: "Students retrieved successfully",
+            data: students,
+        };
+        // Add pagination information if provided
+        if (page && perPage) {
+            data.pagination = {
+                per_page: perPage,
+                total: total,
+                current_page: page,
+                last_page: Math.ceil(total / perPage),
+            };
+        }
+
+        return res.status(200).json(data);
+    } catch (error) {
+        return error500(error, res);
+    } finally {
+        if (connection) connection.release()
+    }
+
+}
+
 module.exports = {
-    addStudent
+    addStudent,
+    getStudents
 }
