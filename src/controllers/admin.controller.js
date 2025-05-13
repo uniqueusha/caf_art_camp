@@ -1,4 +1,6 @@
 const pool = require("../../db");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 // Function to obtain a database connection
 const getConnection = async () => {
@@ -25,6 +27,138 @@ error500 = (error, res) => {
         error: error
     });
 }
+
+//add admin/user
+const addUser = async (req, res) => {
+    const user_name = req.body.user_name ? req.body.user_name.trim() : "";
+    const email_id = req.body.email_id ? req.body.email_id.trim() : "";
+    const password = req.body.password ? req.body.password : "";
+    if (!user_name) {
+        return error422("User Name is required.", res);
+    } else if (!email_id) {
+        return error422("Email Id required.", res);
+    } else if (!password) {
+        return error422("Password is required.", res);
+    }
+    
+
+    //check User Name already is exists or not
+    const isExistUserNameQuery = `SELECT * FROM users WHERE LOWER(TRIM(user_name))= ?`;
+    const isExistUserNameResult = await pool.query(isExistUserNameQuery, [
+        user_name.toLowerCase(),
+    ]);
+    if (isExistUserNameResult[0].length > 0) {
+        return error422(" User Name is already exists.", res);
+    }
+
+    // Check if email_id exists
+    const checkUserQuery = "SELECT * FROM users WHERE LOWER(TRIM(email_id)) = ? AND status = 1";
+    const checkUserResult = await pool.query(checkUserQuery, [email_id.toLowerCase()]);
+    if (checkUserResult[0].length > 0) {
+        return error422('Email id is already exists.', res);
+    }
+    
+
+    // Attempt to obtain a database connection
+    let connection = await getConnection();
+    try {
+        //Start the transaction
+        await connection.beginTransaction();
+        //insert into user
+        const insertUserQuery = `INSERT INTO users (user_name, email_id) VALUES (?, ?)`;
+        const insertUserValues = [ user_name, email_id];
+        const insertuserResult = await connection.query(insertUserQuery, insertUserValues);
+        const user_id = insertuserResult[0].insertId;
+
+        const hash = await bcrypt.hash(password, 10); // Hash the password using bcrypt
+
+        //insert into Untitled
+        const insertUntitledQuery =
+            "INSERT INTO untitleds (user_id, extenstions) VALUES (?,?)";
+        const insertUntitledValues = [user_id, hash];
+        const untitledResult = await connection.query(insertUntitledQuery, insertUntitledValues)
+
+        //commit the transation
+        await connection.commit();
+        res.status(200).json({
+            status: 200,
+            message: `User added successfully`,
+        });
+    } catch (error) {
+        await connection.rollback();
+        return error500(error, res);
+    } finally {
+        await connection.release();
+    }
+};
+
+//Login user...
+const userLogin = async (req, res) => {
+    const email_id = req.body.email_id ? req.body.email_id.trim() : "";
+    const password = req.body.password ? req.body.password : "";
+    if (!email_id) {
+        return error422("Email Id is Required.", res);
+    } else if (!password) {
+        return error422("Password is Required.", res);
+    }
+    // Attempt to obtain a database connection
+    let connection = await getConnection();
+    try {
+        //Start the transaction
+        await connection.beginTransaction();
+        // Check if the user with the provided user email id exists or not
+        const checkUserQuery = "SELECT * FROM users WHERE LOWER(TRIM(email_id)) = ? AND status = 1";
+        const checkUserResult = await connection.query(checkUserQuery, [email_id.toLowerCase()]);
+        const check_user = checkUserResult[0][0];
+
+        if (!check_user) {
+            return error422("Authentication failed.", res);
+        }
+        // Check if the user with the provided Untitled id exists
+        const checkUserUntitledQuery = "SELECT * FROM untitleds WHERE user_id = ?";
+        const [checkUserUntitledResult] = await connection.query(checkUserUntitledQuery, [check_user.user_id]);
+        const user_untitled = checkUserUntitledResult[0];
+
+        if (!user_untitled) {
+            return error422("Authentication failed.", res);
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user_untitled.extenstions);
+        if (!isPasswordValid) {
+            return error422("Password wrong.", res);
+        }
+        // Generate a JWT token
+        const token = jwt.sign(
+            {
+                user_id: user_untitled.user_id,
+                email_id: check_user.email_id,
+            },
+            "secret_this_should_be", // Use environment variable for secret key
+            { expiresIn: "10h" }
+        );
+        const userDataQuery = `SELECT u.* FROM users u
+        WHERE u.user_id = ? `;
+        let userDataResult = await connection.query(userDataQuery, [check_user.user_id]);
+
+        // Commit the transaction
+        await connection.commit();
+        return res.status(200).json({
+            status: 200,
+            message: "Authentication successfully",
+            token: token,
+            expiresIn: 36000000, // 10 hour in seconds,
+            data: userDataResult[0][0],
+        });
+
+    } catch (error) {
+        console.log(error);
+        
+        return error500(error, res)
+    } finally {
+        await connection.release();
+    }
+};
+
 
 //State List Active
 const getStateWma = async (req, res) => {
@@ -194,9 +328,11 @@ const getGenderWma = async (req, res) => {
 
 
 module.exports = {
+    addUser,
     getStateWma,
     getCityWma,
     getBloodgroupWma,
     getCourseWma,
-    getGenderWma
+    getGenderWma,
+    userLogin
 }
