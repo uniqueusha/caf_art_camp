@@ -6,6 +6,8 @@ const adminController = require("../controllers/admin.controller");
 router.post('/', adminController.addUser);
 //login
 router.post('/login', adminController.userLogin);
+//upload
+router.get('/upload', adminController.getUpload);
 // get active state
 router.get('/active-state-list', adminController.getStateWma);
 // get active city

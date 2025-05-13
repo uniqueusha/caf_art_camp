@@ -1,6 +1,10 @@
 const pool = require("../../db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
 
 // Function to obtain a database connection
 const getConnection = async () => {
@@ -327,6 +331,80 @@ const getGenderWma = async (req, res) => {
 }
 
 //pdf uploaded
+const getUpload1 = async ( req, res) => {
+
+// Ensure the upload folder exists
+const uploadPath = path.join(__dirname, 'document/pdf');
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true });
+}
+
+// Configure multer storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadPath); // Save to documents/pdf
+  },
+  filename: function (req, file, cb) {
+    const uniqueName = Date.now() + '-' + file.originalname;
+    cb(null, uniqueName);
+  }
+});
+
+// File filter (allow only PDFs)
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype === 'application/pdf') {
+    cb(null, true);
+  } else {
+    cb(new Error('Only PDF files are allowed!'), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter
+});
+
+// Upload route
+app.post('/upload-pdf', upload.single('pdf'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No PDF file uploaded.');
+  }
+
+  res.json({
+    message: 'PDF uploaded successfully!',
+    filePath: req.file.path
+  });
+});
+}
+
+
+const getUpload = async (req, res) => {
+    let connection = await getConnection();
+    try {
+        await connection.beginTransaction();
+        const filePath = path.join(__dirname, "..", "..", "document", "Details-of-Art-Camp.pdf");
+
+        if (fs.existsSync(filePath)) {
+            res.download(filePath, "Details-of-Art-Camp.pdf"); // Triggers file download
+        } else {
+            res.status(404).json({ message: "File not found" });
+        }
+    
+        // res.status(200).json({
+        //     status: 200,
+        //     message: "PDF Donload successfully",
+        // });
+    } catch (error) {
+        return error500(error, res);
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
+
+
+
+
 
 
 
@@ -337,5 +415,6 @@ module.exports = {
     getBloodgroupWma,
     getCourseWma,
     getGenderWma,
-    userLogin
+    userLogin,
+    getUpload
 }

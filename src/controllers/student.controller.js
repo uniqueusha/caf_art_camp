@@ -772,5 +772,6 @@ module.exports = {
     getStudents,
     getStudent,
     updateStudent,
-    getStudentDownload
+    getStudentDownload,
+    
 }
