@@ -349,7 +349,66 @@ const getStudents = async (req, res) => {
 
 }
 
+// get task by id student...
+const getStudent = async (req, res) => {
+    const studentId = parseInt(req.params.id);
+
+    // const { assigned_to, user_id, task_footer_id } = req.query;
+
+    // attempt to obtain a database connection
+    let connection = await getConnection();
+
+    try {
+
+        //start a transaction
+        await connection.beginTransaction();
+
+        let taskQuery = `SELECT s.*, c.city,st.state, g.gender, b.bloodgroup, cr.course FROM student s
+        LEFT JOIN city c
+        ON s.city_id = c.city_id
+        LEFT JOIN state st
+        ON s.state_id = st.state_id
+        LEFT JOIN gender g
+        ON s.gender_id = g.gender_id
+        LEFT JOIN bloodgroup b
+        ON s.bloodgroup_id = b.bloodgroup_id
+        LEFT JOIN course cr
+        ON s.course_id = cr.course_id
+        WHERE s.student_id = ?`;
+        
+        const studentResult = await connection.query(taskQuery, [studentId]);
+
+        if (studentResult[0].length == 0) {
+            return error422("Student Not Found.", res);
+        }
+        const student = studentResult[0][0];
+
+        //get footer
+        let studentLanguageQuery = `SELECT sl.* FROM student_language sl
+            WHERE sl.student_id =?`
+        
+        let studentLanguageResult = await connection.query(studentLanguageQuery, [studentId]);
+        student['studentLanguage'] = studentLanguageResult[0];
+        
+        let studentPdfQuery = `SELECT sp.* FROM student_pdf sp
+            WHERE sp.student_id = ?`;
+        let studentPdfResult = await connection.query(studentPdfQuery, [studentId]);
+        student['studentPdf'] = studentPdfResult[0];
+
+        return res.status(200).json({
+            status: 200,
+            message: "Student Retrived Successfully",
+            data: student
+        });
+    } catch (error) {
+        return error500(error, res);
+    } finally {
+        if (connection) connection.release()
+    }
+}
+
 module.exports = {
     addStudent,
-    getStudents
+    getStudents,
+    getStudent
 }
