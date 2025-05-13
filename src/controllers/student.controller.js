@@ -2,6 +2,7 @@ const { error } = require("console");
 const pool = require("../../db");
 const fs = require('fs');
 const path = require('path');
+const xlsx = require("xlsx");
 
 // Function to obtain a database connection
 const getConnection = async () => {
@@ -221,7 +222,7 @@ const addStudent = async (req, res) => {
 
 // get student list...
 const getStudents = async (req, res) => {
-    const { page, perPage, key, city_id, state_id, gender_id, bloodgroup_id, course_id } = req.query;
+    const { page, perPage, key, fromDate, toDate, city_id, state_id, gender_id, bloodgroup_id, course_id } = req.query;
 
     // attempt to obtain a database connection
     let connection = await getConnection();
@@ -245,6 +246,16 @@ const getStudents = async (req, res) => {
         WHERE 1`;
 
         let countQuery = `SELECT COUNT(*) AS total FROM student s
+        LEFT JOIN city c
+        ON s.city_id = c.city_id
+        LEFT JOIN state st
+        ON s.state_id = st.state_id
+        LEFT JOIN gender g
+        ON s.gender_id = g.gender_id
+        LEFT JOIN bloodgroup b
+        ON s.bloodgroup_id = b.bloodgroup_id
+        LEFT JOIN course cr
+        ON s.course_id = cr.course_id
         WHERE 1`;
 
         if (key) {
@@ -259,6 +270,13 @@ const getStudents = async (req, res) => {
                 getStudentsQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.college_phone) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.hod_name) LIKE '%${lowercaseKey}%' || LOWER(s.phone_number) LIKE '%${lowercaseKey}%')`;
                 countQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.college_phone) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.hod_name) LIKE '%${lowercaseKey}%' || LOWER(s.phone_number) LIKE '%${lowercaseKey}%')`;
             }
+        }
+
+        // from date and to date
+        if (fromDate && toDate) {
+            getStudentsQuery += ` AND DATE(s.cts) BETWEEN '${fromDate}' AND '${toDate}'`;
+            countQuery += ` AND DATE(s.cts) BETWEEN '${fromDate}' AND '${toDate}'`;
+
         }
 
         if (city_id) {
@@ -400,8 +418,6 @@ const getStudent = async (req, res) => {
         if (connection) connection.release()
     }
 }
-
-
 
 //student update...
 const updateStudent = async (req, res) => {
@@ -612,9 +628,149 @@ const updateStudent = async (req, res) => {
     }
 }
 
+//download
+const getStudentDownload = async (req, res) => {
+    const { key, fromDate, toDate, city_id, state_id, gender_id, bloodgroup_id, course_id } = req.query;
+
+
+    let connection = await getConnection();
+    try {
+        await connection.beginTransaction();
+
+        let getStudentsQuery = `SELECT s.*, c.city,st.state, g.gender, b.bloodgroup, cr.course FROM student s
+        LEFT JOIN city c
+        ON s.city_id = c.city_id
+        LEFT JOIN state st
+        ON s.state_id = st.state_id
+        LEFT JOIN gender g
+        ON s.gender_id = g.gender_id
+        LEFT JOIN bloodgroup b
+        ON s.bloodgroup_id = b.bloodgroup_id
+        LEFT JOIN course cr
+        ON s.course_id = cr.course_id
+        WHERE 1`;
+
+        if (key) {
+            const lowercaseKey = key.toLowerCase().trim();
+            getStudentsQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.college_phone) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.hod_name) LIKE '%${lowercaseKey}%' || LOWER(s.phone_number) LIKE '%${lowercaseKey}%')`;
+        }
+
+        // from date and to date
+        if (fromDate && toDate) {
+            getStudentsQuery += ` AND DATE(s.cts) BETWEEN '${fromDate}' AND '${toDate}'`;
+        }
+
+        if (city_id) {
+            getStudentsQuery += ` AND c.city_id = ${city_id}`;
+            countQuery += `  AND c.city_id = ${city_id}`;
+        }
+
+        if (state_id) {
+            getStudentsQuery += ` AND s.state_id = ${state_id}`;
+        }
+
+        if (gender_id) {
+            getStudentsQuery += ` AND s.gender_id = ${gender_id}`;
+        }
+
+        if (bloodgroup_id) {
+            getStudentsQuery += ` AND s.bloodgroup_id = ${bloodgroup_id}`;
+        }
+
+        if (course_id) {
+            getStudentsQuery += ` AND s.course_id = ${course_id}`;
+        }
+
+        getStudentsQuery += " ORDER BY s.cts DESC";
+
+        let result = await connection.query(getStudentsQuery);
+        let students = result[0];
+
+        if (students.length === 0) {
+            return error422("No data found.", res);
+        }
+
+        //get footer
+        for (let i = 0; i < students.length; i++) {
+            const studentId = students[i].student_id;
+
+            let studentLanguageQuery = `SELECT sl.* FROM student_language sl
+            WHERE sl.student_id = ${studentId}`;
+            studentLanguageResult = await connection.query(studentLanguageQuery);
+            students[i]['studentLanguage'] = studentLanguageResult[0];
+
+
+            let studentPdfQuery = `SELECT sp.* FROM student_pdf sp
+            WHERE sp.student_id = ${studentId}`;
+            studentPdfResult = await connection.query(studentPdfQuery);
+            students[i]['studentPdf'] = studentPdfResult[0];
+        }
+        // Add "Sr No" column
+        students = students.map((item, index) => ({
+            "Sr No": index + 1, // Add serial number
+            "College Name": item.college_name,
+            "Address": item.address,
+            "Pin Code": item.pin_code,
+            "College Phone": item.college_phone,
+            "College Email Id": item.college_email_id,
+            "Hod Name": item.hod_name,
+            "Phone Number": item.phone_number,
+            "Hod Email Id": item.hod_email_id,
+            "student_name": item.student_name,
+            "Mobile Number": item.mobile1,
+            "Mobile Number2": item.mobile2,
+            "studnet_email_id": item.studnet_email_id,
+            "meals": item.meals,
+            "year": item.year,
+            "city": item.city,
+            "state": item.state,
+            "gender": item.gender,
+            "bloodgroup": item.bloodgroup,
+            "course": item.course,
+            "Status": item.status === 1 ? "activated" : "deactivated",
+            "Languages Known": item.studentLanguage.map(lang => lang.knowlanguage).join(", "),
+    "PDF Files": item.studentPdf.map(pdf => pdf.pdf_location).join(", ")
+        }));
+
+        // Create a new workbook
+        const workbook = xlsx.utils.book_new();
+
+        // Create a worksheet and add only required columns
+        const worksheet = xlsx.utils.json_to_sheet(students);
+
+        // Add the worksheet to the workbook
+        xlsx.utils.book_append_sheet(workbook, worksheet, "StudentsInfo");
+
+        // Create a unique file name
+        const excelFileName = `exported_data_${Date.now()}.xlsx`;
+
+        // Write the workbook to a file
+        xlsx.writeFile(workbook, excelFileName);
+
+        // Send the file to the client
+        res.download(excelFileName, (err) => {
+            if (err) {
+                console.error(err);
+                res.status(500).send("Error downloading the file.");
+            } else {
+                fs.unlinkSync(excelFileName);
+            }
+        });
+
+        await connection.commit();
+    } catch (error) {
+        console.log(error);
+        
+        return error500(error, res);
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
 module.exports = {
     addStudent,
     getStudents,
     getStudent,
-    updateStudent
+    updateStudent,
+    getStudentDownload
 }
