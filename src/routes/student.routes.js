@@ -6,4 +6,5 @@ const studentController = require("../controllers/student.controller");
 router.post('/', studentController.addStudent);
 router.get('/', studentController.getStudents);
 router.get('/:id', studentController.getStudent);
+router.put('/:id', studentController.updateStudent);
 module.exports = router
