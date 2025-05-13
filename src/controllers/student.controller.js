@@ -37,7 +37,7 @@ const addStudent = async (req, res) => {
     const city_id = req.body.city_id ? req.body.city_id : '';
     const state_id = req.body.state_id ? req.body.state_id : '';
     const pin_code = req.body.pin_code ? req.body.pin_code : '';
-    const college_phone = req.body.college_phone ? req.body.college_phone.trim() : '';
+    const college_phone = req.body.college_phone ? req.body.college_phone : '';
     const college_email_id = req.body.college_email_id ? req.body.college_email_id.trim() : '';
     const hod_name = req.body.hod_name ? req.body.hod_name.trim() : '';
     const phone_number = req.body.phone_number ? req.body.phone_number : '';
