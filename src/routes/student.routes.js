@@ -10,4 +10,5 @@ router.get('/student-count', studentController.getStudentsCount);
 router.get('/datewise-student-count', studentController.getMonthWiseStudentsCount);
 router.get('/:id', studentController.getStudent);
 router.put('/:id', studentController.updateStudent);
+router.patch('/:id', studentController.onStatusChange);
 module.exports = router

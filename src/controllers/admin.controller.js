@@ -155,8 +155,6 @@ const userLogin = async (req, res) => {
         });
 
     } catch (error) {
-        console.log(error);
-        
         return error500(error, res)
     } finally {
         await connection.release();
@@ -405,6 +403,7 @@ const getStudentDocumentDownload = async (req, res) => {
         if (connection) connection.release();
     }
 };
+
 
 
 

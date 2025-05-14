@@ -1,4 +1,4 @@
-const { error } = require("console");
+
 const pool = require("../../db");
 const fs = require('fs');
 const path = require('path');
@@ -759,8 +759,6 @@ const getStudentDownload = async (req, res) => {
 
         await connection.commit();
     } catch (error) {
-        console.log(error);
-        
         return error500(error, res);
     } finally {
         if (connection) connection.release();
@@ -885,6 +883,58 @@ const getMonthWiseStudentsCount = async (req, res) => {
     }
 };
 
+//student status change
+const onStatusChange = async (req, res) => {
+    const studentId = parseInt(req.params.id);
+    const status = parseInt(req.query.status); // Validate and parse the status parameter
+    // Attempt to obtain a database connection
+    let connection = await getConnection();
+
+    try {
+        // Start a transaction
+        await connection.beginTransaction();
+        // Check if the student  exists
+        const studentQuery = "SELECT * FROM student WHERE student_id = ?";
+        const studentResult = await connection.query(studentQuery, [studentId]);
+
+        if (studentResult[0].length == 0) {
+            return res.status(404).json({
+                status: 404,
+                message: "Student Not Found.",
+            });
+        }
+
+        // Validate the status parameter
+        if (status !== 0 && status !== 1) {
+            return res.status(400).json({
+                status: 400,
+                message:
+                    "Invalid status value. Status must be 0 (inactive) or 1 (active).",
+            });
+        }
+
+        // Soft update the student status
+        const updateQuery = `
+              UPDATE student
+              SET status = ?
+              WHERE student_id = ?`;
+
+        await connection.query(updateQuery, [status, studentId]);
+
+        const statusMessage = status === 1 ? "activated" : "deactivated";
+        //commit the transation
+        await connection.commit();
+        return res.status(200).json({
+            status: 200,
+            message: `Student ${statusMessage} successfully.`,
+        });
+    } catch (error) {
+        return error500(error, res);
+    } finally {
+        await connection.release();
+    }
+};
+
 
 module.exports = {
     addStudent,
@@ -893,6 +943,7 @@ module.exports = {
     updateStudent,
     getStudentDownload,
     getStudentsCount,
-    getMonthWiseStudentsCount
+    getMonthWiseStudentsCount,
+    onStatusChange
     
 }
