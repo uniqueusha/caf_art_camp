@@ -96,7 +96,41 @@ const addStudent = async (req, res) => {
         return error422("Year is required.", res);
     }
 
+    //check Student Name already is exists or not
+    const isExistStudentNameQuery = `SELECT * FROM student WHERE LOWER(TRIM(student_name))= ?`;
+    const isExistStudentNameResult = await pool.query(isExistStudentNameQuery, [student_name.toLowerCase()]);
+    if (isExistStudentNameResult[0].length > 0) {
+        return error422(" Student Name is already exists.", res);
+    }
 
+
+    //check studnet Email id already is exists or not
+    const isExistStudentEmailQuery = `SELECT * FROM student WHERE studnet_email_id= ?`;
+    const isExistStudentEmailResult = await pool.query(isExistStudentEmailQuery, [studnet_email_id]);
+    if (isExistStudentEmailResult[0].length > 0) {
+        return error422(" Student email is already exists.", res);
+    }
+
+    //check Mobile Number already is exists or not
+    const isExistMobileNumberQuery = `SELECT * FROM student WHERE mobile1 = ?`;
+    const isExistMobileNumberResult = await pool.query(isExistMobileNumberQuery, [mobile1]);
+    if (isExistMobileNumberResult[0].length > 0) {
+        return error422(" First Mobile Number is already exists.", res);
+    }
+
+    //check Mobile Number already is exists or not
+    const isExistMobileNumber2Query = `SELECT * FROM student WHERE mobile2 = ?`;
+    const isExistMobileNumber2Result = await pool.query(isExistMobileNumber2Query, [mobile2]);
+    if (isExistMobileNumber2Result[0].length > 0) {
+        return error422(" Second Mobile Number is already exists.", res);
+    }
+
+    // //check Mobile Number already is exists or not
+    // const isExistPhoneNumber2Query = `SELECT * FROM student WHERE mobile2 = ?`;
+    // const isExistMobileNumber2Result = await pool.query(isExistMobileNumber2Query, [mobile2]);
+    // if (isExistMobileNumber2Result[0].length > 0) {
+    //     return error422(" Second Mobile Number is already exists.", res);
+    // }
 
     // Check if city exists
     const cityQuery = "SELECT * FROM city WHERE city_id = ? ";
@@ -483,6 +517,35 @@ const updateStudent = async (req, res) => {
         return error422("Course id is required.", res);
     } else if (!year) {
         return error422("Year is required.", res);
+    }
+
+    //check Student Name already is exists or not
+    const isExistStudentNameQuery = `SELECT * FROM student WHERE LOWER(TRIM(student_name))= ?`;
+    const isExistStudentNameResult = await pool.query(isExistStudentNameQuery, [student_name.toLowerCase()]);
+    if (isExistStudentNameResult[0].length > 0) {
+        return error422(" Student Name is already exists.", res);
+    }
+
+
+    //check studnet Email id already is exists or not
+    const isExistStudentEmailQuery = `SELECT * FROM student WHERE studnet_email_id= ?`;
+    const isExistStudentEmailResult = await pool.query(isExistStudentEmailQuery, [studnet_email_id]);
+    if (isExistStudentEmailResult[0].length > 0) {
+        return error422(" Student email is already exists.", res);
+    }
+
+    //check Mobile Number already is exists or not
+    const isExistMobileNumberQuery = `SELECT * FROM student WHERE mobile1 = ?`;
+    const isExistMobileNumberResult = await pool.query(isExistMobileNumberQuery, [mobile1]);
+    if (isExistMobileNumberResult[0].length > 0) {
+        return error422(" First Mobile Number is already exists.", res);
+    }
+
+    //check Mobile Number already is exists or not
+    const isExistMobileNumber2Query = `SELECT * FROM student WHERE mobile2 = ?`;
+    const isExistMobileNumber2Result = await pool.query(isExistMobileNumber2Query, [mobile2]);
+    if (isExistMobileNumber2Result[0].length > 0) {
+        return error422(" Second Mobile Number is already exists.", res);
     }
 
     // Check if city exists
