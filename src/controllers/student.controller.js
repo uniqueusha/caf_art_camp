@@ -193,7 +193,7 @@ const addStudent = async (req, res) => {
                 fs.writeFileSync(filePath, pdfBuffer);
 
                 // Save relative path to DB (for example: uploads/pdfs/student_1234567890.pdf)
-                const dbFilePath = `uploads/pdfs/${fileName}`;
+                const dbFilePath = `uploads/${fileName}`;
 
                 if (student_id >= 5) {
                     let insertStusentPDFQuery = 'INSERT INTO student_pdf (student_id, pdf_location) VALUES (?, ?)';
@@ -595,7 +595,7 @@ const updateStudent = async (req, res) => {
                 fs.writeFileSync(filePath, pdfBuffer);
 
                 // Save relative path to DB (for example: uploads/pdfs/student_1234567890.pdf)
-                const dbFilePath = `uploads/pdfs/${fileName}`;
+                const dbFilePath = `uploads/${fileName}`;
 
                 if (student_pdf_id) {
                     let updateStusentPDFQuery = `UPDATE student_pdf SET pdf_location = ? WHERE student_id= ? AND student_pdf_id = ?  `;

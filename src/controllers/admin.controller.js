@@ -359,6 +359,52 @@ const getDocumentDownload = async (req, res) => {
 
 
 
+const getStudentDocumentDownload = async (req, res) => {
+    let connection;
+    try {
+        connection = await getConnection();
+        await connection.beginTransaction();
+
+        const { student_id } = req.query;
+
+        const getStudentsQuery = `
+            SELECT sp.pdf_location, s.student_name 
+            FROM student_pdf sp
+            LEFT JOIN student s ON s.student_id = sp.student_id
+            WHERE sp.student_id = ?
+        `;
+
+        const [rows] = await connection.query(getStudentsQuery, [student_id]);
+        
+        if (!rows.length) {
+            return res.status(404).json({ message: "No document found for this student" });
+        }
+
+        const pdfLocation = rows[0].pdf_location;
+        const studentName = rows[0].student_name;
+
+        // Define actual path to the PDF file
+        const filePath = path.join(__dirname, '..', '..', pdfLocation);
+
+        // Format student name for filename (remove spaces, special characters, etc.)
+        const safeStudentName = studentName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      
+        
+        const downloadFileName = `${safeStudentName}.pdf`;
+        
+        
+
+        if (fs.existsSync(filePath)) {
+            return res.download(filePath, downloadFileName);
+        } else {
+            return res.status(404).json({ message: "File not found on server" });
+        }
+    } catch (error) {
+        return error500(error, res);
+    } finally {
+        if (connection) connection.release();
+    }
+};
 
 
 
@@ -371,5 +417,6 @@ module.exports = {
     getCourseWma,
     getGenderWma,
     userLogin,
-    getDocumentDownload
+    getDocumentDownload,
+    getStudentDocumentDownload
 }

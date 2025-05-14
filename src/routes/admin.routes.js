@@ -8,6 +8,7 @@ router.post('/', adminController.addUser);
 router.post('/login', adminController.userLogin);
 //upload
 router.get('/document-download', adminController.getDocumentDownload);
+router.get('/student-document-download', adminController.getStudentDocumentDownload)
 // get active state
 router.get('/active-state-list', adminController.getStateWma);
 // get active city
