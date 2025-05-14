@@ -6,6 +6,8 @@ const studentController = require("../controllers/student.controller");
 router.post('/', studentController.addStudent);
 router.get('/', studentController.getStudents);
 router.get('/download', studentController.getStudentDownload);
+router.get('/student-count', studentController.getStudentsCount);
+router.get('/datewise-student-count', studentController.getMonthWiseStudentsCount);
 router.get('/:id', studentController.getStudent);
 router.put('/:id', studentController.updateStudent);
 module.exports = router

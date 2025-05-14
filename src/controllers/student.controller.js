@@ -767,11 +767,132 @@ const getStudentDownload = async (req, res) => {
     }
 };
 
+// get student count...
+const getStudentsCount = async (req, res) => {
+
+    // attempt to obtain a database connection
+    let connection = await getConnection();
+
+    try {
+
+        //start a transaction
+        await connection.beginTransaction();
+
+        let getStudentsQuery = `SELECT COUNT(*) AS total FROM student s
+        LEFT JOIN city c
+        ON s.city_id = c.city_id
+        LEFT JOIN state st
+        ON s.state_id = st.state_id
+        LEFT JOIN gender g
+        ON s.gender_id = g.gender_id
+        LEFT JOIN bloodgroup b
+        ON s.bloodgroup_id = b.bloodgroup_id
+        LEFT JOIN course cr
+        ON s.course_id = cr.course_id
+        WHERE 1`;
+
+        const result = await connection.query(getStudentsQuery);
+        const studentsCount = result[0];
+        
+        // Commit the transaction
+        await connection.commit();
+        const data = {
+            status: 200,
+            message: "Students Count successfully",
+            data: studentsCount,
+        };
+
+        return res.status(200).json(data);
+    } catch (error) {
+        return error500(error, res);
+    } finally {
+        if (connection) connection.release()
+    }
+}
+
+const getMonthWiseStudentsCount = async (req, res) => {
+    const currentDate = new Date();
+    const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1); // 1st of the month
+    const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0); // Last day of the month
+
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const formattedStartDate = formatDate(startDate);
+    const formattedEndDate = formatDate(endDate);
+
+    let connection = await getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        //Corrected query: Group by DATE(s.cts)
+        let studentCountQuery = `
+        SELECT DATE(s.cts) AS date, COUNT(*) AS total 
+        FROM student s
+        LEFT JOIN city c ON s.city_id = c.city_id
+        LEFT JOIN state st ON s.state_id = st.state_id
+        LEFT JOIN gender g ON s.gender_id = g.gender_id
+        LEFT JOIN bloodgroup b ON s.bloodgroup_id = b.bloodgroup_id
+        LEFT JOIN course cr ON s.course_id = cr.course_id
+        WHERE DATE(s.cts) BETWEEN ? AND ?
+        GROUP BY DATE(s.cts)
+        ORDER BY DATE(s.cts)`;
+
+        const [studentCounts] = await connection.query(studentCountQuery, [formattedStartDate, formattedEndDate]);
+
+        // Create a list of all dates in the current month
+        const allDatesInMonth = [];
+        let dateIterator = new Date(startDate);
+        while (dateIterator <= endDate) {
+            allDatesInMonth.push(formatDate(dateIterator));
+            dateIterator.setDate(dateIterator.getDate() + 1);
+        }
+
+        // Map query result to object
+        const studentCountMap = {};
+        studentCounts.forEach(row => {
+            const formattedRowDate = formatDate(new Date(row.date));
+            studentCountMap[formattedRowDate] = {
+                total: row.total
+            };
+        });
+
+        // Construct final result
+        const finalResult = allDatesInMonth.map(date => {
+            const counts = studentCountMap[date] || { total: 0 };
+            return {
+                date,
+                total: counts.total
+            };
+        });
+
+        await connection.commit();
+        return res.status(200).json({
+            status: 200,
+            message: "Date-wise student count retrieved successfully",
+            data: finalResult,
+        });
+
+    } catch (error) {
+        return error500(error, res);
+    } finally {
+        if (connection) connection.release();
+    }
+};
+
+
 module.exports = {
     addStudent,
     getStudents,
     getStudent,
     updateStudent,
     getStudentDownload,
+    getStudentsCount,
+    getMonthWiseStudentsCount
     
 }
