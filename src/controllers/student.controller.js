@@ -720,7 +720,7 @@ const getStudentDownload = async (req, res) => {
 
         if (key) {
             const lowercaseKey = key.toLowerCase().trim();
-            getStudentsQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.college_phone) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.hod_name) LIKE '%${lowercaseKey}%' || LOWER(s.phone_number) LIKE '%${lowercaseKey}%')`;
+                getStudentsQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.studnet_email_id) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.mobile1) LIKE '%${lowercaseKey}%' || LOWER(c.city) LIKE '%${lowercaseKey}%' || LOWER(s.state) LIKE '%${lowercaseKey}%')`;
         }
 
         // from date and to date
