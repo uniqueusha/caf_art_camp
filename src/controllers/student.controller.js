@@ -301,8 +301,8 @@ const getStudents = async (req, res) => {
                 getStudentsQuery += ` AND status = 0`;
                 countQuery += ` AND status = 0`;
             } else {
-                getStudentsQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.college_phone) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.hod_name) LIKE '%${lowercaseKey}%' || LOWER(s.phone_number) LIKE '%${lowercaseKey}%')`;
-                countQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.college_phone) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.hod_name) LIKE '%${lowercaseKey}%' || LOWER(s.phone_number) LIKE '%${lowercaseKey}%')`;
+                getStudentsQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.student_email_id) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.mobile1) LIKE '%${lowercaseKey}%' || LOWER(c.city) LIKE '%${lowercaseKey}%' || LOWER(s.state) LIKE '%${lowercaseKey}%')`;
+                countQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.student_email_id) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.mobile1) LIKE '%${lowercaseKey}%' || LOWER(c.city) LIKE '%${lowercaseKey}%' || LOWER(s.state) LIKE '%${lowercaseKey}%')`;
             }
         }
 
