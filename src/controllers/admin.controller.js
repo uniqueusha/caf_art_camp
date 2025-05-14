@@ -383,15 +383,12 @@ const getStudentDocumentDownload = async (req, res) => {
 
         // Define actual path to the PDF file
         const filePath = path.join(__dirname, '..', '..', pdfLocation);
-
+        
         // Format student name for filename (remove spaces, special characters, etc.)
         const safeStudentName = studentName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
       
-        
         const downloadFileName = `${safeStudentName}.pdf`;
         
-        
-
         if (fs.existsSync(filePath)) {
             return res.download(filePath, downloadFileName);
         } else {
