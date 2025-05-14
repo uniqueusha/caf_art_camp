@@ -256,7 +256,7 @@ const addStudent = async (req, res) => {
 
 // get student list...
 const getStudents = async (req, res) => {
-    const { page, perPage, key, fromDate, toDate, city_id, state_id, gender_id, bloodgroup_id, course_id } = req.query;
+    const { page, perPage, key, fromDate, toDate, city_id, state_id, gender_id, bloodgroup_id, course_id, status } = req.query;
 
     // attempt to obtain a database connection
     let connection = await getConnection();
@@ -311,6 +311,11 @@ const getStudents = async (req, res) => {
             getStudentsQuery += ` AND DATE(s.cts) BETWEEN '${fromDate}' AND '${toDate}'`;
             countQuery += ` AND DATE(s.cts) BETWEEN '${fromDate}' AND '${toDate}'`;
 
+        }
+
+        if (status) {
+            getStudentsQuery += ` AND c.status = ${status}`;
+            countQuery += `  AND c.status = ${status}`;
         }
 
         if (city_id) {
@@ -520,30 +525,30 @@ const updateStudent = async (req, res) => {
     }
 
     //check Student Name already is exists or not
-    const isExistStudentNameQuery = `SELECT * FROM student WHERE LOWER(TRIM(student_name))= ?`;
-    const isExistStudentNameResult = await pool.query(isExistStudentNameQuery, [student_name.toLowerCase()]);
+    const isExistStudentNameQuery = `SELECT * FROM student WHERE LOWER(TRIM(student_name))= ? AND student_id != ?`;
+    const isExistStudentNameResult = await pool.query(isExistStudentNameQuery, [student_name.toLowerCase(), studentId]);
     if (isExistStudentNameResult[0].length > 0) {
         return error422(" Student Name is already exists.", res);
     }
 
 
     //check studnet Email id already is exists or not
-    const isExistStudentEmailQuery = `SELECT * FROM student WHERE studnet_email_id= ?`;
-    const isExistStudentEmailResult = await pool.query(isExistStudentEmailQuery, [studnet_email_id]);
+    const isExistStudentEmailQuery = `SELECT * FROM student WHERE studnet_email_id = ? AND student_id != ?`;
+    const isExistStudentEmailResult = await pool.query(isExistStudentEmailQuery, [studnet_email_id, studentId]);
     if (isExistStudentEmailResult[0].length > 0) {
         return error422(" Student email is already exists.", res);
     }
 
     //check Mobile Number already is exists or not
-    const isExistMobileNumberQuery = `SELECT * FROM student WHERE mobile1 = ?`;
-    const isExistMobileNumberResult = await pool.query(isExistMobileNumberQuery, [mobile1]);
+    const isExistMobileNumberQuery = `SELECT * FROM student WHERE mobile1 = ? AND student_id != ?`;
+    const isExistMobileNumberResult = await pool.query(isExistMobileNumberQuery, [mobile1, studentId]);
     if (isExistMobileNumberResult[0].length > 0) {
         return error422(" First Mobile Number is already exists.", res);
     }
 
     //check Mobile Number already is exists or not
-    const isExistMobileNumber2Query = `SELECT * FROM student WHERE mobile2 = ?`;
-    const isExistMobileNumber2Result = await pool.query(isExistMobileNumber2Query, [mobile2]);
+    const isExistMobileNumber2Query = `SELECT * FROM student WHERE mobile2 = ? AND student_id != ?`;
+    const isExistMobileNumber2Result = await pool.query(isExistMobileNumber2Query, [mobile2, studentId]);
     if (isExistMobileNumber2Result[0].length > 0) {
         return error422(" Second Mobile Number is already exists.", res);
     }
@@ -660,17 +665,17 @@ const updateStudent = async (req, res) => {
                 // Save relative path to DB (for example: uploads/pdfs/student_1234567890.pdf)
                 const dbFilePath = `uploads/${fileName}`;
 
-                if (student_pdf_id) {
+                // if (student_pdf_id) {
                     let updateStusentPDFQuery = `UPDATE student_pdf SET pdf_location = ? WHERE student_id= ? AND student_pdf_id = ?  `;
                     let updateStusentPDFvalues = [dbFilePath, studentId, student_pdf_id];
                     let updateStusentPDFResult = await connection.query(updateStusentPDFQuery, updateStusentPDFvalues);
-                } else {
+                // } else {
 
-                    let insertStusentPDFQuery = 'INSERT INTO student_pdf (student_id, pdf_location) VALUES (?, ?)';
-                    let insertStusentPDFvalues = [studentId, dbFilePath];
-                    await connection.query(insertStusentPDFQuery, insertStusentPDFvalues);
+                //     let insertStusentPDFQuery = 'INSERT INTO student_pdf (student_id, pdf_location) VALUES (?, ?)';
+                //     let insertStusentPDFvalues = [studentId, dbFilePath];
+                //     await connection.query(insertStusentPDFQuery, insertStusentPDFvalues);
 
-                }
+                // }
             } catch (err) {
                 await connection.query("ROLLBACK");
                 return error500("Error processing PDF: " + err.message, res);
