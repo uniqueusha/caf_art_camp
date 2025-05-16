@@ -730,7 +730,6 @@ const getStudentDownload = async (req, res) => {
 
         if (city_id) {
             getStudentsQuery += ` AND c.city_id = ${city_id}`;
-            countQuery += `  AND c.city_id = ${city_id}`;
         }
 
         if (state_id) {
