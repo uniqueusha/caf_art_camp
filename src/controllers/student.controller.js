@@ -197,8 +197,6 @@ const addStudent = async (req, res) => {
             let insertStusentLanguageResult = await connection.query(insertStusentLanguageQuery, insertStusentLanguagevalues);
         }
 
-
-
         let studentPDFArray = studentPDF;
         for (let i = 0; i < studentPDFArray.length; i++) {
             const element = studentPDFArray[i];
@@ -229,18 +227,16 @@ const addStudent = async (req, res) => {
                 // Save relative path to DB (for example: uploads/pdfs/student_1234567890.pdf)
                 const dbFilePath = `uploads/${fileName}`;
 
-                if (student_id >= 5) {
                     let insertStusentPDFQuery = 'INSERT INTO student_pdf (student_id, pdf_location) VALUES (?, ?)';
                     let insertStusentPDFvalues = [student_id, dbFilePath];
+                
                     await connection.query(insertStusentPDFQuery, insertStusentPDFvalues);
-                }
+                
             } catch (err) {
-                await connection.query("ROLLBACK");
                 return error500("Error processing PDF: " + err.message, res);
             }
         }
-
-
+    
         // Commit the transaction
         await connection.commit();
         res.status(200).json({
