@@ -770,7 +770,8 @@ const getStudentDownload = async (req, res) => {
         }
         // Add "Sr No" column
         students = students.map((item, index) => ({
-            "Sr No": index + 1, // Add serial number
+            "Sr No": index + 1, 
+            "Date": item.cts,
             "College Name": item.college_name,
             "Address": item.address,
             "Pin Code": item.pin_code,
