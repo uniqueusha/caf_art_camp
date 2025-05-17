@@ -96,13 +96,6 @@ const addStudent = async (req, res) => {
         return error422("Year is required.", res);
     }
 
-    //check Student Name already is exists or not
-    const isExistStudentNameQuery = `SELECT * FROM student WHERE LOWER(TRIM(student_name))= ?`;
-    const isExistStudentNameResult = await pool.query(isExistStudentNameQuery, [student_name.toLowerCase()]);
-    if (isExistStudentNameResult[0].length > 0) {
-        return error422(" Student Name is already exists.", res);
-    }
-
 
     //check studnet Email id already is exists or not
     const isExistStudentEmailQuery = `SELECT * FROM student WHERE studnet_email_id= ?`;
@@ -519,14 +512,6 @@ const updateStudent = async (req, res) => {
     } else if (!year) {
         return error422("Year is required.", res);
     }
-
-    //check Student Name already is exists or not
-    const isExistStudentNameQuery = `SELECT * FROM student WHERE LOWER(TRIM(student_name))= ? AND student_id != ?`;
-    const isExistStudentNameResult = await pool.query(isExistStudentNameQuery, [student_name.toLowerCase(), studentId]);
-    if (isExistStudentNameResult[0].length > 0) {
-        return error422(" Student Name is already exists.", res);
-    }
-
 
     //check studnet Email id already is exists or not
     const isExistStudentEmailQuery = `SELECT * FROM student WHERE studnet_email_id = ? AND student_id != ?`;
