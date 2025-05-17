@@ -207,11 +207,15 @@ const getCityWma = async (req, res) => {
         //start a transaction
         await connection.beginTransaction();
 
-        const getCityQuery = `SELECT * FROM city WHERE state_id  = ?
+        const getCityQuery = `SELECT * FROM city WHERE 1 
         AND status = 1 ORDER BY city`;
+        if (state_id) {
+            getStudentsQuery += ` AND state_id = ${state_id}`;
+        }
 
-        const getCityResult = await connection.query(getCityQuery, [ state_id ]);
+        const getCityResult = await connection.query(getCityQuery);
         const city = getCityResult[0];
+
 
         // Commit the transaction
         await connection.commit();
