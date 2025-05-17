@@ -207,12 +207,12 @@ const getCityWma = async (req, res) => {
         //start a transaction
         await connection.beginTransaction();
 
-        const getCityQuery = `SELECT * FROM city WHERE 1 
-        AND status = 1 ORDER BY city`;
+        let getCityQuery = `SELECT * FROM city WHERE 1 
+        AND status = 1`;
         if (state_id) {
-            getStudentsQuery += ` AND state_id = ${state_id}`;
+            getCityQuery += ` AND state_id = ${state_id}`;
         }
-
+        getCityQuery += ` ORDER BY city`;
         const getCityResult = await connection.query(getCityQuery);
         const city = getCityResult[0];
 
@@ -225,7 +225,7 @@ const getCityWma = async (req, res) => {
             message: "City retrieved successfully.",
             data: city,
         });
-    } catch (error) {
+    } catch (error) {    
         return error500(error, res);
     } finally {
         if (connection) connection.release()
