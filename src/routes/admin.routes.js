@@ -20,4 +20,5 @@ router.get('/active-course-list', adminController.getCourseWma);
 //get active gender
 router.get('/active-gender-list', adminController.getGenderWma);
 
+
 module.exports = router

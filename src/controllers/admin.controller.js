@@ -197,7 +197,7 @@ const getStateWma = async (req, res) => {
 
 //City List Active
 const getCityWma = async (req, res) => {
-    const { city_id } = req.query;
+    const { state_id } = req.query;
 
     // attempt to obtain a database connection
     let connection = await getConnection();
@@ -207,15 +207,12 @@ const getCityWma = async (req, res) => {
         //start a transaction
         await connection.beginTransaction();
 
-        let getCityQuery = `SELECT c.*, s.state FROM city c 
-        LEFT JOIN state s
-        ON c.state_id = s.state_id
-        WHERE 1 
-        AND c.status = 1`;
-        if (city_id) {
-            getCityQuery += ` AND c.city_id = ${city_id}`;
+        let getCityQuery = `SELECT * FROM city WHERE 1 
+        AND status = 1`;
+        if (state_id) {
+            getCityQuery += ` AND state_id = ${state_id}`;
         }
-        getCityQuery += ` ORDER BY c.city`;
+        getCityQuery += ` ORDER BY city`;
         const getCityResult = await connection.query(getCityQuery);
         const city = getCityResult[0];
 
@@ -342,7 +339,7 @@ const getDocumentDownload = async (req, res) => {
     let connection = await getConnection();
     try {
         await connection.beginTransaction();
-        const filePath = path.join(__dirname, "..", "..", "document", "Details-of-Art-Camp.pdf");
+        const filePath = path.join(__dirname, "..", "..", "document", "CAF ART CAMP - Konark Chapter 2025-26 (1).pdf");
 
         if (fs.existsSync(filePath)) {
             res.download(filePath, "Details-of-Art-Camp.pdf"); // Triggers file download
