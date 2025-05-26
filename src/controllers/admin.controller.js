@@ -358,9 +358,6 @@ const getDocumentDownload = async (req, res) => {
     }
 };
 
-
-
-
 const getStudentDocumentDownload = async (req, res) => {
     let connection;
     try {
@@ -392,7 +389,7 @@ const getStudentDocumentDownload = async (req, res) => {
         const safeStudentName = studentName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
       
         const downloadFileName = `${safeStudentName}.pdf`;
-        
+    
         if (fs.existsSync(filePath)) {
             return res.download(filePath, downloadFileName);
         } else {
