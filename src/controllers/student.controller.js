@@ -35,7 +35,7 @@ const addStudent = async (req, res) => {
     ? req.body.college_name.trim()
     : "";
   const address = req.body.address ? req.body.address.trim() : "";
-  const city_id = req.body.city_id ? req.body.city_id : "";
+  const city= req.body.city ? req.body.city : "";
   const state_id = req.body.state_id ? req.body.state_id : "";
   const pin_code = req.body.pin_code ? req.body.pin_code : "";
   const college_phone = req.body.college_phone ? req.body.college_phone : "";
@@ -70,8 +70,8 @@ const addStudent = async (req, res) => {
     return error422("College name is required.", res);
   } else if (!address) {
     return error422("Address is required.", res);
-  } else if (!city_id) {
-    return error422("City id is required.", res);
+  } else if (!city) {
+    return error422("City is required.", res);
   } else if (!state_id) {
     return error422("State id is required.", res);
   } else if (!pin_code) {
@@ -142,11 +142,11 @@ const addStudent = async (req, res) => {
   // }
 
   // Check if city exists
-  const cityQuery = "SELECT * FROM city WHERE city_id = ? ";
-  const cityResult = await pool.query(cityQuery, [city_id]);
-  if (cityResult[0].length == 0) {
-    return error422("City Not Found.", res);
-  }
+  // const cityQuery = "SELECT * FROM city WHERE city_id = ? ";
+  // const cityResult = await pool.query(cityQuery, [city_id]);
+  // if (cityResult[0].length == 0) {
+  //   return error422("City Not Found.", res);
+  // }
 
   // Check if state exists
   const stateQuery = "SELECT * FROM state WHERE state_id = ? ";
@@ -184,11 +184,11 @@ const addStudent = async (req, res) => {
     await connection.beginTransaction();
 
     //insert into Student
-    const insertStudentQuery = `INSERT INTO student (college_name, address, city_id, state_id, pin_code, college_phone, college_email_id, hod_name, phone_number, hod_email_id, student_name, mobile1, mobile2, studnet_email_id, gender_id, meals, bloodgroup_id, course_id, year) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const insertStudentQuery = `INSERT INTO student (college_name, address, city, state_id, pin_code, college_phone, college_email_id, hod_name, phone_number, hod_email_id, student_name, mobile1, mobile2, studnet_email_id, gender_id, meals, bloodgroup_id, course_id, year) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const insertStudentValues = [
       college_name,
       address,
-      city_id,
+      city,
       state_id,
       pin_code,
       college_phone,
@@ -295,7 +295,7 @@ const getStudents = async (req, res) => {
     key,
     fromDate,
     toDate,
-    city_id,
+    city,
     state_id,
     gender_id,
     bloodgroup_id,
@@ -310,9 +310,7 @@ const getStudents = async (req, res) => {
     //start a transaction
     await connection.beginTransaction();
 
-    let getStudentsQuery = `SELECT s.*, c.city,st.state, g.gender, b.bloodgroup, cr.course FROM student s
-        LEFT JOIN city c
-        ON s.city_id = c.city_id
+    let getStudentsQuery = `SELECT s.*,st.state, g.gender, b.bloodgroup, cr.course FROM student s
         LEFT JOIN state st
         ON s.state_id = st.state_id
         LEFT JOIN gender g
@@ -324,8 +322,6 @@ const getStudents = async (req, res) => {
         WHERE 1`;
 
     let countQuery = `SELECT COUNT(*) AS total FROM student s
-        LEFT JOIN city c
-        ON s.city_id = c.city_id
         LEFT JOIN state st
         ON s.state_id = st.state_id
         LEFT JOIN gender g
@@ -345,8 +341,8 @@ const getStudents = async (req, res) => {
         getStudentsQuery += ` AND status = 0`;
         countQuery += ` AND status = 0`;
       } else {
-        getStudentsQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.studnet_email_id) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.mobile1) LIKE '%${lowercaseKey}%' || LOWER(c.city) LIKE '%${lowercaseKey}%' || LOWER(st.state) LIKE '%${lowercaseKey}%')`;
-        countQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.studnet_email_id) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.mobile1) LIKE '%${lowercaseKey}%' || LOWER(c.city) LIKE '%${lowercaseKey}%' || LOWER(st.state) LIKE '%${lowercaseKey}%')`;
+        getStudentsQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.studnet_email_id) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.mobile1) LIKE '%${lowercaseKey}%' || LOWER(s.city) LIKE '%${lowercaseKey}%' || LOWER(st.state) LIKE '%${lowercaseKey}%')`;
+        countQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.studnet_email_id) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.mobile1) LIKE '%${lowercaseKey}%' || LOWER(s.city) LIKE '%${lowercaseKey}%' || LOWER(st.state) LIKE '%${lowercaseKey}%')`;
       }
     }
 
@@ -361,9 +357,9 @@ const getStudents = async (req, res) => {
       countQuery += `  AND c.status = ${status}`;
     }
 
-    if (city_id) {
-      getStudentsQuery += ` AND c.city_id = ${city_id}`;
-      countQuery += `  AND c.city_id = ${city_id}`;
+    if (city) {
+      getStudentsQuery += ` AND s.city = ${city}`;
+      countQuery += `  AND s.city = ${city}`;
     }
 
     if (state_id) {
@@ -453,9 +449,7 @@ const getStudent = async (req, res) => {
     //start a transaction
     await connection.beginTransaction();
 
-    let taskQuery = `SELECT s.*, c.city,st.state, g.gender, b.bloodgroup, cr.course FROM student s
-        LEFT JOIN city c
-        ON s.city_id = c.city_id
+    let taskQuery = `SELECT s.*, st.state, g.gender, b.bloodgroup, cr.course FROM student s
         LEFT JOIN state st
         ON s.state_id = st.state_id
         LEFT JOIN gender g
@@ -506,7 +500,7 @@ const updateStudent = async (req, res) => {
     ? req.body.college_name.trim()
     : "";
   const address = req.body.address ? req.body.address.trim() : "";
-  const city_id = req.body.city_id ? req.body.city_id : "";
+  const city = req.body.city ? req.body.city : "";
   const state_id = req.body.state_id ? req.body.state_id : "";
   const pin_code = req.body.pin_code ? req.body.pin_code : "";
   const college_phone = req.body.college_phone
@@ -543,8 +537,8 @@ const updateStudent = async (req, res) => {
     return error422("College name is required.", res);
   } else if (!address) {
     return error422("Address is required.", res);
-  } else if (!city_id) {
-    return error422("City id is required.", res);
+  } else if (!city) {
+    return error422("City is required.", res);
   } else if (!state_id) {
     return error422("State id is required.", res);
   } else if (!pin_code) {
@@ -609,12 +603,12 @@ const updateStudent = async (req, res) => {
     return error422(" Second Mobile Number is already exists.", res);
   }
 
-  // Check if city exists
-  const cityQuery = "SELECT * FROM city WHERE city_id = ? ";
-  const cityResult = await pool.query(cityQuery, [city_id]);
-  if (cityResult[0].length == 0) {
-    return error422("City Not Found.", res);
-  }
+  // // Check if city exists
+  // const cityQuery = "SELECT * FROM city WHERE city_id = ? ";
+  // const cityResult = await pool.query(cityQuery, [city_id]);
+  // if (cityResult[0].length == 0) {
+  //   return error422("City Not Found.", res);
+  // }
 
   // Check if state exists
   const stateQuery = "SELECT * FROM state WHERE state_id = ? ";
@@ -661,13 +655,13 @@ const updateStudent = async (req, res) => {
     // Update the student record with new data
     let updateQuery = `
             UPDATE student
-            SET college_name = ?, address = ?, city_id = ?, state_id = ?, pin_code = ?, college_phone = ?, college_email_id = ?, hod_name = ?, phone_number = ?, hod_email_id = ?, student_name = ?, mobile1 = ?, mobile2 = ?, studnet_email_id = ?, gender_id = ?, meals = ?, bloodgroup_id = ?, course_id = ?, year = ?
+            SET college_name = ?, address = ?, city = ?, state_id = ?, pin_code = ?, college_phone = ?, college_email_id = ?, hod_name = ?, phone_number = ?, hod_email_id = ?, student_name = ?, mobile1 = ?, mobile2 = ?, studnet_email_id = ?, gender_id = ?, meals = ?, bloodgroup_id = ?, course_id = ?, year = ?
             WHERE student_id = ?`;
 
     let updateResult = await connection.query(updateQuery, [
       college_name,
       address,
-      city_id,
+      city,
       state_id,
       pin_code,
       college_phone,
@@ -797,7 +791,7 @@ const getStudentDownload = async (req, res) => {
     key,
     fromDate,
     toDate,
-    city_id,
+    city,
     state_id,
     gender_id,
     bloodgroup_id,
@@ -808,9 +802,7 @@ const getStudentDownload = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    let getStudentsQuery = `SELECT s.*, c.city,st.state, g.gender, b.bloodgroup, cr.course FROM student s
-        LEFT JOIN city c
-        ON s.city_id = c.city_id
+    let getStudentsQuery = `SELECT s.*,st.state, g.gender, b.bloodgroup, cr.course FROM student s
         LEFT JOIN state st
         ON s.state_id = st.state_id
         LEFT JOIN gender g
@@ -823,7 +815,7 @@ const getStudentDownload = async (req, res) => {
 
     if (key) {
       const lowercaseKey = key.toLowerCase().trim();
-      getStudentsQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.studnet_email_id) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.mobile1) LIKE '%${lowercaseKey}%' || LOWER(c.city) LIKE '%${lowercaseKey}%' || LOWER(st.state) LIKE '%${lowercaseKey}%')`;
+      getStudentsQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.studnet_email_id) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.mobile1) LIKE '%${lowercaseKey}%' || LOWER(s.city) LIKE '%${lowercaseKey}%' || LOWER(st.state) LIKE '%${lowercaseKey}%')`;
     }
 
     // from date and to date
@@ -831,8 +823,8 @@ const getStudentDownload = async (req, res) => {
       getStudentsQuery += ` AND DATE(s.cts) BETWEEN '${fromDate}' AND '${toDate}'`;
     }
 
-    if (city_id) {
-      getStudentsQuery += ` AND c.city_id = ${city_id}`;
+    if (city) {
+      getStudentsQuery += ` AND s.city = ${city}`;
     }
 
     if (state_id) {
@@ -879,24 +871,25 @@ const getStudentDownload = async (req, res) => {
       "Sr No": index + 1,
       Date: item.cts,
       "College Name": item.college_name,
-      state: item.state,
-      student_name: item.student_name,
-      "Phone Number": item.phone_number,
       Address: item.address,
+      "State": item.state,
+      "City": item.city,
       "Pin Code": item.pin_code,
-      "College Phone": item.college_phone,
+      "College Mobile Number": item.college_phone,
       "College Email Id": item.college_email_id,
       "Hod Name": item.hod_name,
+      "HOD Mobile Number": item.phone_number,
       "Hod Email Id": item.hod_email_id,
-      "Mobile Number": item.mobile1,
-      "Mobile Number2": item.mobile2,
-      studnet_email_id: item.studnet_email_id,
-      meals: item.meals,
-      year: item.year,
-      city: item.city,
-      gender: item.gender,
-      bloodgroup: item.bloodgroup,
-      course: item.course,
+      "Student Name": item.student_name,
+      "Mobile Number 1": item.mobile1,
+      "Mobile Number 2": item.mobile2,
+      "Studnet Email Id": item.studnet_email_id,
+      "Gender": item.gender,
+      "Meals": item.meals,
+      "Blood Group": item.bloodgroup,
+      "Course": item.course,
+      "Year": item.year,
+   
       Status: item.status === 1 ? "activated" : "deactivated",
       "Languages Known": item.studentLanguage
         .map((lang) => lang.knowlanguage)
@@ -952,8 +945,6 @@ const getStudentsCount = async (req, res) => {
     await connection.beginTransaction();
 
     let getStudentsQuery = `SELECT COUNT(*) AS total FROM student s
-        LEFT JOIN city c
-        ON s.city_id = c.city_id
         LEFT JOIN state st
         ON s.state_id = st.state_id
         LEFT JOIN gender g
@@ -1015,7 +1006,6 @@ const getMonthWiseStudentsCount = async (req, res) => {
     let studentCountQuery = `
         SELECT DATE(s.cts) AS date, COUNT(*) AS total 
         FROM student s
-        LEFT JOIN city c ON s.city_id = c.city_id
         LEFT JOIN state st ON s.state_id = st.state_id
         LEFT JOIN gender g ON s.gender_id = g.gender_id
         LEFT JOIN bloodgroup b ON s.bloodgroup_id = b.bloodgroup_id
