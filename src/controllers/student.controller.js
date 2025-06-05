@@ -1109,6 +1109,56 @@ const onStatusChange = async (req, res) => {
     await connection.release();
   }
 };
+// Change status of multiple students
+const onSoftDeleteMultipleStudents = async (req, res) => {
+  let { studentIds } = req.body;
+
+  if (!Array.isArray(studentIds) || studentIds.length === 0) {
+    return res.status(400).json({
+      status: 400,
+      message: "studentIds must be a non-empty array",
+    });
+  }
+
+  const status = 0; // soft delete = inactive
+
+  const connection = await getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const updateQuery = `UPDATE student SET status = ? WHERE student_id = ?`;
+
+    for (const rawId of studentIds) {
+      const id = parseInt(rawId);
+      if (isNaN(id)) {
+        await connection.rollback();
+        return res.status(400).json({
+          status: 400,
+          message: `Invalid student_id: ${rawId}`,
+        });
+      }
+      await connection.query(updateQuery, [status, id]);
+    }
+
+    await connection.commit();
+
+    return res.status(200).json({
+      status: 200,
+      message: `Selected students Delete successfully.`,
+    });
+  } catch (error) {
+    console.error("Error during soft delete:", error.message);
+    await connection.rollback();
+    return res.status(500).json({
+      status: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  } finally {
+    await connection.release();
+  }
+};
 
 module.exports = {
   addStudent,
@@ -1119,4 +1169,5 @@ module.exports = {
   getStudentsCount,
   getMonthWiseStudentsCount,
   onStatusChange,
+  onSoftDeleteMultipleStudents
 };

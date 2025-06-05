@@ -11,4 +11,5 @@ router.get('/datewise-student-count', studentController.getMonthWiseStudentsCoun
 router.get('/:id', studentController.getStudent);
 router.put('/:id', studentController.updateStudent);
 router.patch('/:id', studentController.onStatusChange);
+router.delete('/multiple-student', studentController.onSoftDeleteMultipleStudents);
 module.exports = router
