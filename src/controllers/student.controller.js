@@ -811,7 +811,7 @@ const getStudentDownload = async (req, res) => {
         ON s.bloodgroup_id = b.bloodgroup_id
         LEFT JOIN course cr
         ON s.course_id = cr.course_id
-        WHERE 1`;
+      WHERE 1 AND s.status = 1`;;
 
     if (key) {
       const lowercaseKey = key.toLowerCase().trim();
