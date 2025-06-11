@@ -353,8 +353,8 @@ const getStudents = async (req, res) => {
     }
 
     if (status) {
-      getStudentsQuery += ` AND c.status = ${status}`;
-      countQuery += `  AND c.status = ${status}`;
+      getStudentsQuery += ` AND s.status = ${status}`;
+      countQuery += `  AND s.status = ${status}`;
     }
 
     if (city) {
