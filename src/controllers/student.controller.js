@@ -796,35 +796,39 @@ const getStudentDownload = async (req, res) => {
     gender_id,
     bloodgroup_id,
     course_id,
+    status // Accept status from query
   } = req.query;
 
   let connection = await getConnection();
   try {
     await connection.beginTransaction();
 
-    let getStudentsQuery = `SELECT s.*,st.state, g.gender, b.bloodgroup, cr.course FROM student s
-        LEFT JOIN state st
-        ON s.state_id = st.state_id
-        LEFT JOIN gender g
-        ON s.gender_id = g.gender_id
-        LEFT JOIN bloodgroup b
-        ON s.bloodgroup_id = b.bloodgroup_id
-        LEFT JOIN course cr
-        ON s.course_id = cr.course_id
-      WHERE 1 AND s.status = 1`;;
+    let getStudentsQuery = `SELECT s.*, st.state, g.gender, b.bloodgroup, cr.course 
+      FROM student s
+      LEFT JOIN state st ON s.state_id = st.state_id
+      LEFT JOIN gender g ON s.gender_id = g.gender_id
+      LEFT JOIN bloodgroup b ON s.bloodgroup_id = b.bloodgroup_id
+      LEFT JOIN course cr ON s.course_id = cr.course_id
+      WHERE 1`;
 
     if (key) {
       const lowercaseKey = key.toLowerCase().trim();
-      getStudentsQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.studnet_email_id) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.mobile1) LIKE '%${lowercaseKey}%' || LOWER(s.city) LIKE '%${lowercaseKey}%' || LOWER(st.state) LIKE '%${lowercaseKey}%')`;
+      getStudentsQuery += ` AND (
+        LOWER(s.college_name) LIKE '%${lowercaseKey}%' OR 
+        LOWER(s.studnet_email_id) LIKE '%${lowercaseKey}%' OR 
+        LOWER(s.student_name) LIKE '%${lowercaseKey}%' OR 
+        LOWER(s.mobile1) LIKE '%${lowercaseKey}%' OR 
+        LOWER(s.city) LIKE '%${lowercaseKey}%' OR 
+        LOWER(st.state) LIKE '%${lowercaseKey}%'
+      )`;
     }
 
-    // from date and to date
     if (fromDate && toDate) {
       getStudentsQuery += ` AND DATE(s.cts) BETWEEN '${fromDate}' AND '${toDate}'`;
     }
 
     if (city) {
-      getStudentsQuery += ` AND s.city = ${city}`;
+      getStudentsQuery += ` AND s.city = '${city}'`;
     }
 
     if (state_id) {
@@ -843,6 +847,11 @@ const getStudentDownload = async (req, res) => {
       getStudentsQuery += ` AND s.course_id = ${course_id}`;
     }
 
+    // Status filter (no default)
+    if (status !== undefined && status !== '') {
+      getStudentsQuery += ` AND s.status = ${status}`;
+    }
+
     getStudentsQuery += " ORDER BY s.cts DESC";
 
     let result = await connection.query(getStudentsQuery);
@@ -852,28 +861,29 @@ const getStudentDownload = async (req, res) => {
       return error422("No data found.", res);
     }
 
-    //get footer
+    // Get extra details (languages and PDF) for each student
     for (let i = 0; i < students.length; i++) {
       const studentId = students[i].student_id;
 
-      let studentLanguageQuery = `SELECT sl.* FROM student_language sl
-            WHERE sl.student_id = ${studentId}`;
-      studentLanguageResult = await connection.query(studentLanguageQuery);
-      students[i]["studentLanguage"] = studentLanguageResult[0];
+      const [languageRows] = await connection.query(
+        `SELECT sl.* FROM student_language sl WHERE sl.student_id = ${studentId}`
+      );
+      students[i]["studentLanguage"] = languageRows;
 
-      let studentPdfQuery = `SELECT sp.* FROM student_pdf sp
-            WHERE sp.student_id = ${studentId}`;
-      studentPdfResult = await connection.query(studentPdfQuery);
-      students[i]["studentPdf"] = studentPdfResult[0];
+      const [pdfRows] = await connection.query(
+        `SELECT sp.* FROM student_pdf sp WHERE sp.student_id = ${studentId}`
+      );
+      students[i]["studentPdf"] = pdfRows;
     }
-    // Add "Sr No" column
+
+    // Add Sr No in descending order and format each student
     students = students.map((item, index) => ({
-     "Sr No": students.length - index, 
+      "Sr No": students.length - index,
       Date: item.cts,
       "College Name": item.college_name,
       Address: item.address,
-      "State": item.state,
-      "City": item.city,
+      State: item.state,
+      City: item.city,
       "Pin Code": item.pin_code,
       "Phone Number": item.college_phone,
       "College Email Id": item.college_email_id,
@@ -884,12 +894,11 @@ const getStudentDownload = async (req, res) => {
       "Mobile Number 1": item.mobile1,
       "Mobile Number 2": item.mobile2,
       "Studnet Email Id": item.studnet_email_id,
-      "Gender": item.gender,
-      "Meals": item.meals,
+      Gender: item.gender,
+      Meals: item.meals,
       "Blood Group": item.bloodgroup,
-      "Course": item.course,
-      "Year": item.year,
-   
+      Course: item.course,
+      Year: item.year,
       Status: item.status === 1 ? "activated" : "deactivated",
       "Languages Known": item.studentLanguage
         .map((lang) => lang.knowlanguage)
@@ -902,28 +911,20 @@ const getStudentDownload = async (req, res) => {
         .join(", "),
     }));
 
-    // Create a new workbook
+    // Create a new Excel workbook
     const workbook = xlsx.utils.book_new();
-
-    // Create a worksheet and add only required columns
     const worksheet = xlsx.utils.json_to_sheet(students);
-
-    // Add the worksheet to the workbook
     xlsx.utils.book_append_sheet(workbook, worksheet, "StudentsInfo");
 
-    // Create a unique file name
     const excelFileName = `exported_data_${Date.now()}.xlsx`;
-
-    // Write the workbook to a file
     xlsx.writeFile(workbook, excelFileName);
 
-    // Send the file to the client
     res.download(excelFileName, (err) => {
       if (err) {
         console.error(err);
         res.status(500).send("Error downloading the file.");
       } else {
-        fs.unlinkSync(excelFileName);
+        fs.unlinkSync(excelFileName); // delete file after sending
       }
     });
 
@@ -934,6 +935,7 @@ const getStudentDownload = async (req, res) => {
     if (connection) connection.release();
   }
 };
+
 
 // get student count...
 const getStudentsCount = async (req, res) => {
