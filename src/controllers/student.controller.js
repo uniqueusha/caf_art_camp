@@ -295,7 +295,7 @@ const getStudents = async (req, res) => {
     key,
     fromDate,
     toDate,
-    city,
+    city_id,
     state_id,
     gender_id,
     bloodgroup_id,
@@ -310,7 +310,9 @@ const getStudents = async (req, res) => {
     //start a transaction
     await connection.beginTransaction();
 
-    let getStudentsQuery = `SELECT s.*,st.state, g.gender, b.bloodgroup, cr.course FROM student s
+    let getStudentsQuery = `SELECT s.*,ct.city,st.state, g.gender, b.bloodgroup, cr.course FROM student s
+        LEFT JOIN city ct
+        ON s.city_id = ct.city_id
         LEFT JOIN state st
         ON s.state_id = st.state_id
         LEFT JOIN gender g
@@ -322,6 +324,8 @@ const getStudents = async (req, res) => {
         WHERE 1`;
 
     let countQuery = `SELECT COUNT(*) AS total FROM student s
+        LEFT JOIN city ct
+        ON s.city_id = ct.city_id
         LEFT JOIN state st
         ON s.state_id = st.state_id
         LEFT JOIN gender g
@@ -341,8 +345,8 @@ const getStudents = async (req, res) => {
         getStudentsQuery += ` AND status = 0`;
         countQuery += ` AND status = 0`;
       } else {
-        getStudentsQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.studnet_email_id) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.mobile1) LIKE '%${lowercaseKey}%' || LOWER(s.city) LIKE '%${lowercaseKey}%' || LOWER(st.state) LIKE '%${lowercaseKey}%')`;
-        countQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.studnet_email_id) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.mobile1) LIKE '%${lowercaseKey}%' || LOWER(s.city) LIKE '%${lowercaseKey}%' || LOWER(st.state) LIKE '%${lowercaseKey}%')`;
+        getStudentsQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.studnet_email_id) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.mobile1) LIKE '%${lowercaseKey}%' || LOWER(ct.city) LIKE '%${lowercaseKey}%' || LOWER(st.state) LIKE '%${lowercaseKey}%')`;
+        countQuery += ` AND (LOWER(s.college_name) LIKE '%${lowercaseKey}%' || LOWER(s.studnet_email_id) LIKE '%${lowercaseKey}%' || LOWER(s.student_name) LIKE '%${lowercaseKey}%' || LOWER(s.mobile1) LIKE '%${lowercaseKey}%' || LOWER(ct.city) LIKE '%${lowercaseKey}%' || LOWER(st.state) LIKE '%${lowercaseKey}%')`;
       }
     }
 
@@ -357,9 +361,9 @@ const getStudents = async (req, res) => {
       countQuery += `  AND s.status = ${status}`;
     }
 
-    if (city) {
-      getStudentsQuery += ` AND s.city = ${city}`;
-      countQuery += `  AND s.city = ${city}`;
+    if (city_id) {
+      getStudentsQuery += ` AND s.city_id = ${city_id}`;
+      countQuery += `  AND s.city_id = ${city_id}`;
     }
 
     if (state_id) {
@@ -791,7 +795,7 @@ const getStudentDownload = async (req, res) => {
     key,
     fromDate,
     toDate,
-    city,
+    city_id,
     state_id,
     gender_id,
     bloodgroup_id,
@@ -803,8 +807,9 @@ const getStudentDownload = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    let getStudentsQuery = `SELECT s.*, st.state, g.gender, b.bloodgroup, cr.course 
+    let getStudentsQuery = `SELECT s.*,ct.city_id, st.state, g.gender, b.bloodgroup, cr.course 
       FROM student s
+      LEFT JOIN city ct ON s.city_id = ct.city_id
       LEFT JOIN state st ON s.state_id = st.state_id
       LEFT JOIN gender g ON s.gender_id = g.gender_id
       LEFT JOIN bloodgroup b ON s.bloodgroup_id = b.bloodgroup_id
@@ -818,7 +823,7 @@ const getStudentDownload = async (req, res) => {
         LOWER(s.studnet_email_id) LIKE '%${lowercaseKey}%' OR 
         LOWER(s.student_name) LIKE '%${lowercaseKey}%' OR 
         LOWER(s.mobile1) LIKE '%${lowercaseKey}%' OR 
-        LOWER(s.city) LIKE '%${lowercaseKey}%' OR 
+        LOWER(ct.city) LIKE '%${lowercaseKey}%' OR 
         LOWER(st.state) LIKE '%${lowercaseKey}%'
       )`;
     }
@@ -827,8 +832,8 @@ const getStudentDownload = async (req, res) => {
       getStudentsQuery += ` AND DATE(s.cts) BETWEEN '${fromDate}' AND '${toDate}'`;
     }
 
-    if (city) {
-      getStudentsQuery += ` AND s.city = '${city}'`;
+    if (city_id) {
+      getStudentsQuery += ` AND s.city_id = '${city_id}'`;
     }
 
     if (state_id) {
