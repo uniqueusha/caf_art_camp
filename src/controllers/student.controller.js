@@ -911,7 +911,7 @@ const getStudentDownload = async (req, res) => {
       "PDF Files": item.studentPdf
         .map(
           (pdf) =>
-            `https://wmits.xyz:3002/v1/api/admin/student-document-download?student_id=${item.student_id}`
+            `https://cafart.kokuyocamlin.com:3000/v1/api/admin/student-document-download?student_id=${item.student_id}`
         )
         .join(", "),
     }));
