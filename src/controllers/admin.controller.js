@@ -339,7 +339,7 @@ const getDocumentDownload = async (req, res) => {
     let connection = await getConnection();
     try {
         await connection.beginTransaction();
-        const filePath = path.join(__dirname, "..", "..", "document", "CAF ART CAMP - Konark Chapter 2025-26 (1).pdf");
+        const filePath = path.join(__dirname, "..", "..", "document", "Details of Art Camp - Konark Chapter 2025-26.pdf");
 
         if (fs.existsSync(filePath)) {
             res.download(filePath, "Details-of-Art-Camp.pdf"); // Triggers file download

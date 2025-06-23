@@ -134,6 +134,10 @@ const addStudent = async (req, res) => {
     return error422(" Second Mobile Number is already exists.", res);
   }
 
+  if (mobile1 === mobile2) {
+        return error422("Mobile1 and Mobile2 cannot be the same.", res);
+    }
+
   // //check Mobile Number already is exists or not
   // const isExistPhoneNumber2Query = `SELECT * FROM student WHERE mobile2 = ?`;
   // const isExistMobileNumber2Result = await pool.query(isExistMobileNumber2Query, [mobile2]);
