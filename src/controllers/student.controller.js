@@ -60,7 +60,7 @@ const addStudent = async (req, res) => {
   const bloodgroup_id = req.body.bloodgroup_id ? req.body.bloodgroup_id : "";
   const course_id = req.body.course_id ? req.body.course_id : "";
   const year = req.body.year ? req.body.year : "";
-
+  const adhar_number = req.body.adhar_number ? req.body.adhar_number :''
   const studentLanguage = req.body.studentLanguage
     ? req.body.studentLanguage
     : [];
@@ -188,7 +188,7 @@ const addStudent = async (req, res) => {
     await connection.beginTransaction();
 
     //insert into Student
-    const insertStudentQuery = `INSERT INTO student (college_name, address, city, state_id, pin_code, college_phone, college_email_id, hod_name, phone_number, hod_email_id, student_name, mobile1, mobile2, studnet_email_id, gender_id, meals, bloodgroup_id, course_id, year) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const insertStudentQuery = `INSERT INTO student (college_name, address, city, state_id, pin_code, college_phone, college_email_id, hod_name, phone_number, hod_email_id, student_name, mobile1, mobile2, studnet_email_id, gender_id, meals, bloodgroup_id, course_id, year, adhar_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const insertStudentValues = [
       college_name,
       address,
@@ -209,6 +209,7 @@ const addStudent = async (req, res) => {
       bloodgroup_id,
       course_id,
       year,
+      adhar_number
     ];
     const studentResult = await connection.query(
       insertStudentQuery,
@@ -535,7 +536,7 @@ const updateStudent = async (req, res) => {
   const bloodgroup_id = req.body.bloodgroup_id ? req.body.bloodgroup_id : "";
   const course_id = req.body.course_id ? req.body.course_id : "";
   const year = req.body.year ? req.body.year : "";
-
+  const adhar_number = req.body.adhar_number ? req.body.adhar_number :''
   const studentLanguage = req.body.studentLanguage
     ? req.body.studentLanguage
     : [];
@@ -663,7 +664,7 @@ const updateStudent = async (req, res) => {
     // Update the student record with new data
     let updateQuery = `
             UPDATE student
-            SET college_name = ?, address = ?, city = ?, state_id = ?, pin_code = ?, college_phone = ?, college_email_id = ?, hod_name = ?, phone_number = ?, hod_email_id = ?, student_name = ?, mobile1 = ?, mobile2 = ?, studnet_email_id = ?, gender_id = ?, meals = ?, bloodgroup_id = ?, course_id = ?, year = ?
+            SET college_name = ?, address = ?, city = ?, state_id = ?, pin_code = ?, college_phone = ?, college_email_id = ?, hod_name = ?, phone_number = ?, hod_email_id = ?, student_name = ?, mobile1 = ?, mobile2 = ?, studnet_email_id = ?, gender_id = ?, meals = ?, bloodgroup_id = ?, course_id = ?, year = ?, adhar_number =  ?
             WHERE student_id = ?`;
 
     let updateResult = await connection.query(updateQuery, [
@@ -686,6 +687,7 @@ const updateStudent = async (req, res) => {
       bloodgroup_id,
       course_id,
       year,
+      adhar_number,
       studentId,
     ]);
 
@@ -902,6 +904,7 @@ const getStudentDownload = async (req, res) => {
       "Student Name": item.student_name,
       "Mobile Number 1": item.mobile1,
       "Mobile Number 2": item.mobile2,
+      "Adhar Number": item.adhar_number,
       "Studnet Email Id": item.studnet_email_id,
       Gender: item.gender,
       Meals: item.meals,
