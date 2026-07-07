@@ -339,10 +339,10 @@ const getDocumentDownload = async (req, res) => {
     let connection = await getConnection();
     try {
         await connection.beginTransaction();
-        const filePath = path.join(__dirname, "..", "..", "document", "Details of Art Camp - Konark Chapter 2025-26.pdf");
+        const filePath = path.join(__dirname, "..", "..", "document", "Details of Art Camp - Pench Chapter 2026-27");
 
         if (fs.existsSync(filePath)) {
-            res.download(filePath, "Details-of-Art-Camp.pdf"); // Triggers file download
+            res.download(filePath, "Details of Art Camp - Pench Chapter 2026-27.pdf"); // Triggers file download
         } else {
             res.status(404).json({ message: "File not found" });
         }
